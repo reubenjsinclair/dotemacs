@@ -31,8 +31,6 @@
 
 (defvar rjs/default-font-size 105)
 
-  (desktop-save-mode 1)
-
   (setq find-function-C-source-directory "/home/reuben/.emacs.d/build/emacs/src")
   (setq use-short-answers t)
 

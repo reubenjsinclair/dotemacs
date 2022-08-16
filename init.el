@@ -94,17 +94,18 @@
 (use-package f)
 
 (use-package general
-  :after evil
-  :config
-  (general-evil-setup t)
-  (general-create-definer rjs/leader-keys
-    :keymaps '(normal insert visual emacs)
-    :prefix "SPC"
-    :global-prefix "C-SPC")
+    :after evil
+    :config
+    (general-evil-setup t)
+    (general-create-definer rjs/leader-keys
+      :keymaps '(normal insert visual emacs)
+      :prefix "SPC"
+      :global-prefix "C-SPC")
 
-  (rjs/leader-keys
-    "t" '(:ignore t :which-key "toggles")
-    "tt" '(counsel-load-theme :which-key "choose theme")))
+    (rjs/leader-keys
+      "t" '(:ignore t :which-key "toggles")
+      "tt" '(counsel-load-theme :which-key "choose theme")
+))
 
 (setq evil-want-keybinding nil)
 (use-package evil
@@ -251,6 +252,13 @@
   (setq vterm-shell "zsh")
   (setq vterm-max-scrollback 10000))
 
+;;     (defun rjs/eshell-paste ()
+;;   (interactive)
+;; (eshell-bol)
+;;    (insert " ")
+;;   (evil-paste-after)
+;;   )
+
 (defun rjs/configure-eshell ()
   ;; Save command history when commands are entered
   (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
@@ -261,6 +269,7 @@
   ;; Bind some useful keys for evil-mode
   (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
   (evil-normalize-keymaps)
+
 
   (setq eshell-history-size         10000
         eshell-buffer-maximum-lines 10000
@@ -279,11 +288,22 @@
   (eshell-git-prompt-use-theme 'powerline)
   )
 
+(defun rjs/open-eshell ()
+  (interactive)
+  (if (get-buffer "*eshell*")
+      (progn
+        (message "hi")
+        (eshell 't)
+        )
+    (eshell)
+    )
+  )
+
 (defun eshell/clear ()
   (interactive)
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (eshell-send-input)
+    ;; (eshell-send-input)
     )
   )
 
@@ -305,13 +325,6 @@
         '("a" "r" "s" "t" "n" "e" "i" "o"))
   :bind
     ([remap other-window] . switch-window))
-
-(use-package helm
-:disabled
-      :config
-    (helm-mode 1)
-(setq completion-styles '(flex))
-  )
 
 (rjs/leader-keys
   "SPC" '(counsel-find-file :which-key "find file")
@@ -383,7 +396,7 @@
 
 (rjs/leader-keys
   "l" '(:ignore t :which-key "lsp")
-  "la" '(lsp-ui-sideline-apply-code-actions :which-key "apply action")
+  "la" '(lsp-execute-code-action :which-key "apply action")
   "lg" '(:ignore t :which-key "goto")
   "lgd" '(lsp-find-definition :which-key "definition")
   "lgr" '(lsp-find-references :which-key "references")
@@ -404,7 +417,7 @@
 
 (rjs/leader-keys
   "o" '(:ignore t :which-key "open")
-  "ot" '(eshell :which-key "eshell")
+  "ot" '(rjs/open-eshell :which-key "eshell")
   "oc" '(rjs/edit-config :which-key "config")
   "od" '(dired-jump :which-key "dired")
   "oq" '((lambda () (interactive) (start-process "qutebrowser" nil "qutebrowser")) :which-key "qutebrowser")
@@ -482,12 +495,14 @@
 (message "hi")
 
 (rjs/leader-keys python-mode-map
-"le" '(python-shell-send-buffer :which-key "run")
-  )
-  (general-define-key
-   :keymaps 'python-mode-map
-   "C-x C-e" '(python-shell-send-buffer :which-key "eval buffer")
-   )
+:states 'normal
+  "le" '(python-shell-send-buffer :which-key "run")
+    )
+
+    (general-define-key
+     :keymaps 'python-mode-map
+     "C-x C-e" '(python-shell-send-buffer :which-key "eval buffer")
+     )
 
 (use-package dired
   :ensure nil
@@ -603,6 +618,14 @@
   (org-edit-src-exit)
   )
 
+(defun rjs/run-python-code-block ()
+  "Format babel code block"
+  (interactive)
+  (org-edit-special)
+  (python-shell-send-buffer)
+  (org-edit-src-exit)
+  )
+
 (use-package org-modern
   :after org
   :config
@@ -642,6 +665,7 @@
 
   (use-package lsp-treemacs
     :after lsp)
+
   (use-package lsp-ivy
     :after lsp)
 
@@ -770,26 +794,31 @@
   ;;   (python-shell-interpreter "python3")
   ;;   )
 
+(setq lsp-dart-sdk-dir "/home/reuben/snap/flutter/common/flutter")
+(setq lsp-flutter-dart-sdk-dir "/home/reuben/snap/flutter/common/flutter")
+(add-hook 'dart-mode-hook 'lsp)
+
 (use-package elisp-slime-nav)
 
 (use-package company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-              ("<tab>" . company-complete-selection)
-              ("C-e" . company-select-previous-or-abort))
-  (:map lsp-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (setq company-tooltip-align-annotations t)
-  (setq company-show-quick-access 'left)
-  (setq lsp-completion-provider :none)
-  (setq company-backends '((company-capf  company-yasnippet company-sourcekit)))
-  (company-idle-delay 0.0))
+    :after lsp-mode
+    :hook (lsp-mode . company-mode)
+    :bind (:map company-active-map
+                ("<tab>" . company-complete-selection)
+                ("C-e" . company-select-previous-or-abort))
+    (:map lsp-mode-map
+          ("<tab>" . company-indent-or-complete-common))
+    :custom
+    (company-minimum-prefix-length 1)
+    (setq company-tooltip-align-annotations t)
+    (setq company-show-quick-access 'left)
+    (setq lsp-completion-provider :none)
+    (setq company-backends '((company-capf  company-yasnippet company-sourcekit)))
+    (company-idle-delay 0.0))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode))
+  (use-package company-box
+:disabled
+    :hook (company-mode . company-box-mode))
 
 (use-package flycheck
   :after lsp
@@ -918,6 +947,19 @@
   (if (yes-or-no-p "Suspend? ")
       (start-process-shell-command "suspend" nil "systemctl suspend")
     )
+  )
+
+(defun rjs/disable-screen-timeout ()
+  (interactive)
+      (start-process-shell-command "xset -dpms" nil "xset -dpms")
+      (start-process-shell-command "xset s off" nil "xset s off")
+  )
+
+
+(defun rjs/enable-screen-timeout ()
+  (interactive)
+      (start-process-shell-command "xset +dpms" nil "xset +dpms")
+      (start-process-shell-command "xset s on" nil "xset s on")
   )
 
 (defun rjs/nuke-all-buffers ()

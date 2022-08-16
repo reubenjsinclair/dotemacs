@@ -132,18 +132,19 @@
 ** General
 
 #+begin_src emacs-lisp
-  (use-package general
-    :after evil
-    :config
-    (general-evil-setup t)
-    (general-create-definer rjs/leader-keys
-      :keymaps '(normal insert visual emacs)
-      :prefix "SPC"
-      :global-prefix "C-SPC")
+    (use-package general
+      :after evil
+      :config
+      (general-evil-setup t)
+      (general-create-definer rjs/leader-keys
+        :keymaps '(normal insert visual emacs)
+        :prefix "SPC"
+        :global-prefix "C-SPC")
 
-    (rjs/leader-keys
-      "t" '(:ignore t :which-key "toggles")
-      "tt" '(counsel-load-theme :which-key "choose theme")))
+      (rjs/leader-keys
+        "t" '(:ignore t :which-key "toggles")
+        "tt" '(counsel-load-theme :which-key "choose theme")
+  ))
 #+end_src
 
 ** Evil-mode
@@ -344,6 +345,13 @@
 
 ** Eshell
 #+begin_src emacs-lisp
+  ;;     (defun rjs/eshell-paste ()
+  ;;   (interactive)
+  ;; (eshell-bol)
+  ;;    (insert " ")
+  ;;   (evil-paste-after)
+  ;;   )
+
   (defun rjs/configure-eshell ()
     ;; Save command history when commands are entered
     (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
@@ -354,6 +362,7 @@
     ;; Bind some useful keys for evil-mode
     (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
     (evil-normalize-keymaps)
+
 
     (setq eshell-history-size         10000
           eshell-buffer-maximum-lines 10000
@@ -371,6 +380,17 @@
       (setq eshell-visual-commands '("htop" "zsh" "vim")))
     (eshell-git-prompt-use-theme 'powerline)
     )
+
+  (defun rjs/open-eshell ()
+    (interactive)
+    (if (get-buffer "*eshell*")
+        (progn
+          (message "hi")
+          (eshell 't)
+          )
+      (eshell)
+      )
+    )
 #+end_src
 
 *** Clear
@@ -380,7 +400,7 @@
     (interactive)
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (eshell-send-input)
+      ;; (eshell-send-input)
       )
     )
 #+end_src
@@ -418,17 +438,6 @@
         '("a" "r" "s" "t" "n" "e" "i" "o"))
   :bind
     ([remap other-window] . switch-window))
-#+end_src
-
-** Helm [disabled] 
-
-#+begin_src emacs-lisp
-      (use-package helm
-:disabled
-      :config
-    (helm-mode 1)
-(setq completion-styles '(flex))
-  )
 #+end_src
 
 * Keybinds
@@ -525,7 +534,7 @@
 #+begin_src emacs-lisp
   (rjs/leader-keys
     "l" '(:ignore t :which-key "lsp")
-    "la" '(lsp-ui-sideline-apply-code-actions :which-key "apply action")
+    "la" '(lsp-execute-code-action :which-key "apply action")
     "lg" '(:ignore t :which-key "goto")
     "lgd" '(lsp-find-definition :which-key "definition")
     "lgr" '(lsp-find-references :which-key "references")
@@ -554,7 +563,7 @@
 #+begin_src emacs-lisp
   (rjs/leader-keys
     "o" '(:ignore t :which-key "open")
-    "ot" '(eshell :which-key "eshell")
+    "ot" '(rjs/open-eshell :which-key "eshell")
     "oc" '(rjs/edit-config :which-key "config")
     "od" '(dired-jump :which-key "dired")
     "oq" '((lambda () (interactive) (start-process "qutebrowser" nil "qutebrowser")) :which-key "qutebrowser")
@@ -671,8 +680,10 @@
 
 #+begin_src emacs-lisp
     (rjs/leader-keys python-mode-map
+:states 'normal
   "le" '(python-shell-send-buffer :which-key "run")
     )
+
     (general-define-key
      :keymaps 'python-mode-map
      "C-x C-e" '(python-shell-send-buffer :which-key "eval buffer")
@@ -818,6 +829,18 @@
     )
 #+end_src
 
+** Run Python Block
+
+#+begin_src emacs-lisp
+  (defun rjs/run-python-code-block ()
+    "Format babel code block"
+    (interactive)
+    (org-edit-special)
+    (python-shell-send-buffer)
+    (org-edit-src-exit)
+    )
+#+end_src
+
 ** Org Modern
 
 #+begin_src emacs-lisp
@@ -849,34 +872,35 @@
 *** Language Servers
 
 #+begin_src emacs-lisp
-  (defun rjs/lsp-mode-setup ()
-    (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symboles))
-    (lsp-headerline-breadcrumb-mode))
-  (use-package lsp-mode
-    :commands (lsp lsp-deferred)
-    :hook (lsp-mode . rjs/lsp-mode-setup)
-    :init
-    (setq lsp-keymap-prefix "C-c l")
-    :config
-    (lsp-enable-which-key-integration t))
-  (use-package lsp-ui
-    :after lsp
-    :hook (lsp-mode . lsp-ui-mode)
-    :custom
-    (lsp-ui-doc-position 'bottom)
-    (lsp-ui-doc-show-with-cursor t)
-    (lsp-ui-sideline-show-code-actions t)
-    (lsp-ui-doc-enable t))
+    (defun rjs/lsp-mode-setup ()
+      (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symboles))
+      (lsp-headerline-breadcrumb-mode))
+    (use-package lsp-mode
+      :commands (lsp lsp-deferred)
+      :hook (lsp-mode . rjs/lsp-mode-setup)
+      :init
+      (setq lsp-keymap-prefix "C-c l")
+      :config
+      (lsp-enable-which-key-integration t))
+    (use-package lsp-ui
+      :after lsp
+      :hook (lsp-mode . lsp-ui-mode)
+      :custom
+      (lsp-ui-doc-position 'bottom)
+      (lsp-ui-doc-show-with-cursor t)
+      (lsp-ui-sideline-show-code-actions t)
+      (lsp-ui-doc-enable t))
 
-  (use-package lsp-treemacs
-    :after lsp)
-  (use-package lsp-ivy
-    :after lsp)
+    (use-package lsp-treemacs
+      :after lsp)
 
-  (add-hook 'prog-mode-hook 'lsp-deferred)
-  (add-hook 'prog-mode-hook 'format-all-mode)
-  (add-hook 'format-all-mode-hook 'format-all-ensure-formatter)
-(remove-hook 'elisp-mode 'lsp-deferred)
+    (use-package lsp-ivy
+      :after lsp)
+
+    (add-hook 'prog-mode-hook 'lsp-deferred)
+    (add-hook 'prog-mode-hook 'format-all-mode)
+    (add-hook 'format-all-mode-hook 'format-all-ensure-formatter)
+  (remove-hook 'elisp-mode 'lsp-deferred)
 #+end_src
 
 *** TypeScript
@@ -1024,6 +1048,14 @@ This is to fix an error with evil collection. Python-mode-map seems to be overwr
     ;;   )
 #+end_src
 
+*** Dart
+
+#+begin_src emacs-lisp
+(setq lsp-dart-sdk-dir "/home/reuben/snap/flutter/common/flutter")
+(setq lsp-flutter-dart-sdk-dir "/home/reuben/snap/flutter/common/flutter")
+(add-hook 'dart-mode-hook 'lsp)
+#+end_src
+
 *** Slime
 
 #+begin_src emacs-lisp
@@ -1050,6 +1082,7 @@ This is to fix an error with evil collection. Python-mode-map seems to be overwr
     (company-idle-delay 0.0))
 
   (use-package company-box
+:disabled
     :hook (company-mode . company-box-mode))
 #+end_src
 
@@ -1227,6 +1260,23 @@ This is to fix an error with evil collection. Python-mode-map seems to be overwr
     (if (yes-or-no-p "Suspend? ")
         (start-process-shell-command "suspend" nil "systemctl suspend")
       )
+    )
+#+end_src
+
+** Screen Timeout
+
+#+begin_src emacs-lisp
+  (defun rjs/disable-screen-timeout ()
+    (interactive)
+        (start-process-shell-command "xset -dpms" nil "xset -dpms")
+        (start-process-shell-command "xset s off" nil "xset s off")
+    )
+
+  
+  (defun rjs/enable-screen-timeout ()
+    (interactive)
+        (start-process-shell-command "xset +dpms" nil "xset +dpms")
+        (start-process-shell-command "xset s on" nil "xset s on")
     )
 #+end_src
 

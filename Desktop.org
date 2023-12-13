@@ -32,6 +32,8 @@
       (rjs/run-in-background "pasystray")
       (rjs/run-in-background "blueman-applet")
       (rjs/run-in-background "dunst")
+      (rjs/run-in-background "polybar panel")
+      (rjs/run-in-background "polybar monitor_panel")
 
       ;; Show battery status in the mode line
       (display-battery-mode 1)
@@ -64,8 +66,8 @@
       (setq exwm-workspace-number 10)
 
       ;;Windows follow around
-      (setq exwm-layout-show-all-buffers t)
-      (setq exwm-workspace-show-all-buffers t)
+      ;; (setq exwm-layout-show-all-buffers t)
+      ;; (setq exwm-workspace-show-all-buffers t)
 
 
       ;; When window "class" updates, use it to set the buffer name
@@ -81,7 +83,7 @@
 
       (setq exwm-randr-workspace-monitor-plist '(2 "HDMI-1" 1 "HDMI-1" 0 "HDMI-1"))
 
-      (setq exwm-workspace-warp-cursor t)
+      ;; (setq exwm-workspace-warp-cursor t)
 
       (rjs/set-wallpaper)
       (rjs/start-picom)
@@ -115,10 +117,10 @@
               ([?\s-f] . exwm-layout-toggle-fullscreen)
 
               ;; Move between windows
-              ([s-left] . windmove-left)
-              ([s-right] . windmove-right)
-              ([s-up] . windmove-up)
-              ([s-down] . windmove-down)
+              ([s-h] . windmove-left)
+              ([s-l] . windmove-right)
+              ([s-j] . windmove-up)
+              ([s-k] . windmove-down)
 
               ;; Launch applications via shell command
               ([?\s-&] . (lambda (command)
@@ -135,6 +137,14 @@
                             (lambda ()
                               (interactive)
                               (exwm-workspace-switch-create ,i))))
+                        (number-sequence 0 9))
+
+              ;; 's-N': Switch to certain workspace with Super (Win) plus a number key (0 - 9)
+              ,@(mapcar (lambda (i)
+                          `(,(kbd (format "C-s-%d" i)) .
+                            (lambda ()
+                              (interactive)
+                              (exwm-workspace-move-window ,i))))
                         (number-sequence 0 9))))
       (exwm-input-set-key (kbd "s-SPC") 'counsel-linux-app)
 

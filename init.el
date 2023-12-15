@@ -36,6 +36,52 @@
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :font "Comfortaa" :height 120 :weight 'regular)
 
+(use-package ligature
+  :defer t
+  :config
+  ;; Enable the "www" ligature in every possible major mode
+  (ligature-set-ligatures 't '("www"))
+  ;; Enable traditional ligature support in eww-mode, if the
+  ;; `variable-pitch' face supports it
+  (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+  ;; Enable all Cascadia Code ligatures in programming modes
+  (ligature-set-ligatures 'prog-mode '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
+                                       ":::" "::=" "=:=" "===" "==>" "=!=" "=>>" "=<<" "=/=" "!=="
+                                       "!!." ">=>" ">>=" ">>>" ">>-" ">->" "->>" "-->" "---" "-<<"
+                                       "<~~" "<~>" "<*>" "<||" "<|>" "<$>" "<==" "<=>" "<=<" "<->"
+                                       "<--" "<-<" "<<=" "<<-" "<<<" "<+>" "</>" "###" "#_(" "..<"
+                                       "..." "+++" "/==" "///" "_|_" "www" "&&" "^=" "~~" "~@" "~="
+                                       "~>" "~-" "**" "*>" "*/" "||" "|}" "|]" "|=" "|>" "|-" "{|"
+                                       "[|" "]#" "::" ":=" ":>" ":<" "$>" "==" "=>" "!=" "!!" ">:"
+                                       ">=" ">>" ">-" "-~" "-|" "->" "--" "-<" "<~" "<*" "<|" "<:"
+                                       "<$" "<=" "<>" "<-" "<<" "<+" "</" "#{" "#[" "#:" "#=" "#!"
+                                       "##" "#(" "#?" "#_" "%%" ".=" ".-" ".." ".?" "+>" "++" "?:"
+                                       "?=" "?." "??" ";;" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)"
+                                       "\\\\" "://"))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :config
+  (setq doom-modeline-hud t)
+  (setq doom-modeline-checker-simple-format nil)
+  (setq doom-modeline-buffer-state-icon nil)
+  (setq doom-modeline-buffer-encoding nil)
+  (display-battery-mode +1)
+  (setq display-time-format "%a %d %b ╱ %T") ;; E.g.,:  Fri Mar 04 ╱ 03:42:08 pm
+  (setq display-time-interval 1) ;; Please update the time every second.
+  (display-time-mode)
+  (setq display-time-default-load-average nil)
+  (setq display-time-load-average nil)
+  )
+
+(use-package doom-themes
+  :config
+  (load-theme 'doom-one t)
+  )
+
 (defun org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
                       (expand-file-name "~/.emacs.d/Emacs.org"))
@@ -179,26 +225,6 @@
                  (side . bottom)
                  (window-height . 0.3)))
   (evil-owl-mode))
-
-(use-package doom-modeline
-  :init (doom-modeline-mode 1)
-  :config
-  (setq doom-modeline-hud t)
-  (setq doom-modeline-checker-simple-format nil)
-  (setq doom-modeline-buffer-state-icon nil)
-  (setq doom-modeline-buffer-encoding nil)
-  (display-battery-mode +1)
-  (setq display-time-format "%a %d %b ╱ %T") ;; E.g.,:  Fri Mar 04 ╱ 03:42:08 pm
-  (setq display-time-interval 1) ;; Please update the time every second.
-  (display-time-mode)
-  (setq display-time-default-load-average nil)
-  (setq display-time-load-average nil)
-  )
-
-(use-package doom-themes
-  :config
-  (load-theme 'doom-one t)
-  )
 
 (defun rjs/insert-src-block ()
   (interactive)
@@ -406,39 +432,6 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-(use-package general
-  :init
-  (setq general-override-states '(insert
-                                  emacs
-                                  hybrid
-                                  normal
-                                  visual
-                                  motion
-                                  operator
-                                  replace))
-  :after evil
-  :config
-  (general-evil-setup t)
-
-  (general-create-definer rjs/global-leader
-    :keymaps 'override
-    :states '(normal visual emacs)
-    :prefix "SPC"
-    :global-prefix "C-SPC")
-
-  (general-create-definer rjs/local-leader
-    :keymaps '(normal insert visual emacs)
-    :prefix ","
-    :global-prefix "C-,")
-
-
-  (general-imap "q"
-    (general-key-dispatch 'self-insert-command
-      :timeout 0.25
-      "n" 'evil-normal-state)
-    )
-  )
-
 (use-package hydra
   :defer t
   )
@@ -459,6 +452,47 @@
   :defer t
 
   :bind ("C-=" . er/expand-region)
+  )
+
+(use-package rainbow-delimiters
+  :defer t
+  :config
+  (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+  (add-hook 'org-mode-hook #'rainbow-delimiters-mode)
+  )
+
+(use-package general
+  :init
+  (setq general-override-states '(insert
+                                  emacs
+                                  hybrid
+                                  normal
+                                  visual
+                                  motion
+                                  operator
+                                  replace))
+  :after evil
+  :config
+  (general-evil-setup t)
+
+  (general-create-definer rjs/global-leader
+    :keymaps 'override
+    :states '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-SPC")
+
+  (general-create-definer rjs/local-leader
+    :keymaps 'override
+    :states '(normal insert visual emacs)
+    :prefix ","
+    :global-prefix "C-,")
+
+
+  (general-imap "q"
+    (general-key-dispatch 'self-insert-command
+      :timeout 0.25
+      "n" 'evil-normal-state)
+    )
   )
 
 (defun rjs/open-org-file ()
@@ -499,6 +533,11 @@
   )
 
 (rjs/global-leader
+  "o" '(:ignore t :which-key "open")
+  "oc" '(calc :which-key "calc")
+  )
+
+(rjs/global-leader
   "j" '(:ignore t :which-key "journal")
   "jn" '(org-journal-new-entry :which-key "new")
   "jj" '(org-journal-open-current-journal-file :which-key "view")
@@ -514,7 +553,7 @@
   "ww" '(switch-window :which-key "switch")
   "w-" '(split-window-vertically :which-key "split")
   "w/" '(split-window-horizontally :which-key "vsplit")
-  "wj" '(evil-window-below :which-key "select below")
+  "wj" '(evil-window-down :which-key "select below")
   "wk" '(evil-window-up :which-key "select above")
   "wl" '(evil-window-right :which-key "select right")
   "wh" '(evil-window-left :which-key "select left")
@@ -553,16 +592,14 @@
   )
 
 (rjs/local-leader
-  "," '(counsel-find-file :which-key "open file")
   "s" '(save-buffer :which-key "save")
   )
 
 (rjs/local-leader
   :keymaps '(org-mode-map org-agenda-mode-map)
   :states '(motion normal insert)
-  :major-modes t
   "a" '(:ignore t :which-key "agenda")
-  "aa" '(org-agenda :which-key "agenda")
+  "aa" '(org-agenda :which-key "open")
   "c" '(org-capture :which-key "capture")
   "i" '(:ignore t :which-key "insert")
   "ic" '(rjs/insert-src-block :which-key "code")
@@ -581,12 +618,46 @@
 
 (rjs/local-leader
   :keymaps '(lsp-mode-map)
-  :states '(motion normal insert)
-  :major-modes t
+  :states '(insert normal)
   "a" '(lsp-execute-code-action :which-key "action")
   "t" '(:ignore t :which-key "toggle")
   "tu" '(lsp-ui-mode :which-key "ui")
   "th" '(lsp-headerline-breadcrumb-mode :which-key "headerline")
+  )
+
+(defun rjs/agda-add-definition ()
+  "Add definition to agda type"
+  (interactive)
+  (beginning-of-line)
+  (setq tempWord (current-word)) ;;This should be a let binding!
+  (end-of-line)
+  (insert "\n" tempWord " = ?")
+  (agda2-load)
+  )
+
+(defun rjs/agda-move-info-right ()
+  "Add definition to agda type"
+  (interactive)
+  (evil-window-down 1)
+  (evil-window-move-far-right)
+  (evil-window-left 1)
+  )
+
+(rjs/local-leader
+  :keymaps '(agda2-mode-map)
+  :states '(insert normal)
+  "i" '(:ignore t :which-key "insert")
+  "id" '(rjs/agda-add-definition :which-key "definition")
+  "r" '(agda2-refine :which-key "refine")
+  "l" '(agda2-load :which-key "load")
+  "j" '(agda2-next-goal :which-key "next")
+  "f" '(agda2-next-goal :which-key "next")
+  "k" '(agda2-previous-goal :which-key "previous")
+  "b" '(agda2-previous-goal :which-key "previous")
+  "n" '(agda2-compute-normalised-maybe-toplevel :which-key "normalise")
+  "v" '(rjs/agda-move-info-right :which-key "view right")
+  "," '(agda2-goal-and-context :which-key "goal and context")
+  "C-," '(agda2-goal-and-context :which-key "goal and context")
   )
 
 (use-package eglot
@@ -606,6 +677,9 @@
 (add-hook 'prog-mode-hook 'lsp-deferred)
 (add-hook 'prog-mode-hook 'format-all-mode)
 (add-hook 'format-all-mode-hook 'format-all-ensure-formatter)
+(remove-hook 'elisp-mode 'lsp-deferred)
+(remove-hook 'agda2-mode 'lsp-deferred)
+(remove-hook 'agda2-mode #'lsp)
 
 (use-package lsp-ui
   :defer t
@@ -646,39 +720,6 @@
   :after lsp
   :config
   (setq js-indent-level 2)
-  )
-
-(use-package ligature
-  :defer t
-  :config
-  ;; Enable the "www" ligature in every possible major mode
-  (ligature-set-ligatures 't '("www"))
-  ;; Enable traditional ligature support in eww-mode, if the
-  ;; `variable-pitch' face supports it
-  (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
-  ;; Enable all Cascadia Code ligatures in programming modes
-  (ligature-set-ligatures 'prog-mode '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
-                                       ":::" "::=" "=:=" "===" "==>" "=!=" "=>>" "=<<" "=/=" "!=="
-                                       "!!." ">=>" ">>=" ">>>" ">>-" ">->" "->>" "-->" "---" "-<<"
-                                       "<~~" "<~>" "<*>" "<||" "<|>" "<$>" "<==" "<=>" "<=<" "<->"
-                                       "<--" "<-<" "<<=" "<<-" "<<<" "<+>" "</>" "###" "#_(" "..<"
-                                       "..." "+++" "/==" "///" "_|_" "www" "&&" "^=" "~~" "~@" "~="
-                                       "~>" "~-" "**" "*>" "*/" "||" "|}" "|]" "|=" "|>" "|-" "{|"
-                                       "[|" "]#" "::" ":=" ":>" ":<" "$>" "==" "=>" "!=" "!!" ">:"
-                                       ">=" ">>" ">-" "-~" "-|" "->" "--" "-<" "<~" "<*" "<|" "<:"
-                                       "<$" "<=" "<>" "<-" "<<" "<+" "</" "#{" "#[" "#:" "#=" "#!"
-                                       "##" "#(" "#?" "#_" "%%" ".=" ".-" ".." ".?" "+>" "++" "?:"
-                                       "?=" "?." "??" ";;" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)"
-                                       "\\\\" "://"))
-  ;; Enables ligature checks globally in all buffers. You can also do it
-  ;; per mode with `ligature-mode'.
-  (global-ligature-mode t))
-
-(use-package rainbow-delimiters
-  :defer t
-  :config
-  (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
-  (add-hook 'org-mode-hook #'rainbow-delimiters-mode)
   )
 
 (setq gc-cons-threshold (* 2 8 1000 1000))
